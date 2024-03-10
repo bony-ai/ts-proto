@@ -16,16 +16,20 @@ const fileDescriptorProto = imp("FileDescriptorProto@ts-proto-descriptors");
 
 const extensionCache: { [key: string]: { [key: string]: FieldDescriptorProto } } = {};
 
-export function generateSchema(ctx: Context, fileDesc: FileDescriptorProto, sourceInfo: SourceInfo): Code[] {
-  const { options } = ctx;
-  const chunks: Code[] = [];
-
+function initExtensionCache(fileDesc: FileDescriptorProto) {
   fileDesc.extension.forEach((extension) => {
     if (!(extension.extendee in extensionCache)) {
       extensionCache[extension.extendee] = {};
     }
     extensionCache[extension.extendee][extension.number] = extension;
   });
+}
+
+export function generateSchema(ctx: Context, fileDesc: FileDescriptorProto, sourceInfo: SourceInfo): Code[] {
+  const { options } = ctx;
+  const chunks: Code[] = [];
+
+  initExtensionCache(fileDesc);
 
   chunks.push(code`
     type ProtoMetaMessageOptions = {
@@ -242,6 +246,30 @@ function encodedOptionsToOptions(
     return undefined;
   }
   return code`{${joinCode(resultOptions, { on: "," })}}`;
+}
+
+export function extractFileOptions(
+  ctx: Context,
+  fileDesc: FileDescriptorProto,
+): Record<string, any> {
+  initExtensionCache(fileDesc);
+  const options: Record<string, any> = {};
+  if (!fileDesc.options) {
+    return options;
+  }
+  const encodedOptions = fileDesc.options._unknownFields;
+  if (!encodedOptions) {
+    return options;
+  }
+  const resultOptions: Code[] = [];
+  for (const key in encodedOptions) {
+    const buffer = encodedOptions[key];
+    const extension = extensionCache[".google.protobuf.FileOptions"][parseInt(key, 10) >>> 3];
+    const reader = new Reader(buffer[0]);
+    let value = (reader as any)[toReaderCall(extension)]();
+    options[extension.name] = value;
+  }
+  return options;
 }
 
 function resolveMessageOptions(ctx: Context, message: DescriptorProto): Code | undefined {

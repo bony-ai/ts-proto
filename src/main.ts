@@ -5,7 +5,7 @@ import {
   FieldDescriptorProto,
   FieldDescriptorProto_Label,
   FieldDescriptorProto_Type,
-  FileDescriptorProto,
+  FileDescriptorProto, ServiceDescriptorProto,
 } from "ts-proto-descriptors";
 import { camelToSnake, capitalize, maybeSnakeToCamel } from "./case";
 import { Context } from "./context";
@@ -100,6 +100,7 @@ import {
   safeAccessor,
 } from "./utils";
 import { visit, visitServices } from "./visit";
+import { generateSdk } from "./generate-sdk";
 
 export function generateFile(ctx: Context, fileDesc: FileDescriptorProto): [string, Code] {
   const { options, utils } = ctx;
@@ -324,34 +325,13 @@ export function generateFile(ctx: Context, fileDesc: FileDescriptorProto): [stri
       chunks.push(code`export const ${serviceConstName} = "${serviceDesc.name}";`);
     }
 
+    const serviceClientImpls: Record<string, ServiceDescriptorProto> = {};
     const uniqueServices = [...new Set(options.outputServices)].sort();
     uniqueServices.forEach((outputService) => {
-      if (outputService === ServiceOption.GRPC) {
-        chunks.push(generateGrpcJsService(ctx, fileDesc, sInfo, serviceDesc));
-      } else if (outputService === ServiceOption.NICE_GRPC) {
-        chunks.push(generateNiceGrpcService(ctx, fileDesc, sInfo, serviceDesc));
-      } else if (outputService === ServiceOption.GENERIC) {
-        chunks.push(generateGenericServiceDefinition(ctx, fileDesc, sInfo, serviceDesc));
-      } else if (outputService === ServiceOption.DEFAULT) {
-        // This service could be Twirp or grpc-web or JSON (maybe). So far all of their
-        // interfaces are fairly similar so we share the same service interface.
         chunks.push(generateService(ctx, fileDesc, sInfo, serviceDesc));
-
-        if (options.outputClientImpl === true) {
-          chunks.push(generateServiceClientImpl(ctx, fileDesc, serviceDesc));
-        } else if (options.outputClientImpl === "grpc-web") {
-          chunks.push(generateGrpcClientImpl(ctx, fileDesc, serviceDesc));
-          chunks.push(generateGrpcServiceDesc(fileDesc, serviceDesc));
-          serviceDesc.method.forEach((method) => {
-            if (!method.clientStreaming) {
-              chunks.push(generateGrpcMethodDesc(ctx, serviceDesc, method));
-            }
-            if (method.serverStreaming) {
-              hasServerStreamingMethods = true;
-            }
-          });
-        }
-      }
+          const {code, className} = generateServiceClientImpl(ctx, fileDesc, serviceDesc)
+          chunks.push(code);
+          serviceClientImpls[className] = serviceDesc;
     });
 
     serviceDesc.method.forEach((methodDesc, _index) => {
@@ -359,6 +339,8 @@ export function generateFile(ctx: Context, fileDesc: FileDescriptorProto): [stri
         hasStreamingMethods = true;
       }
     });
+
+    chunks.push(generateSdk(ctx, fileDesc, serviceClientImpls));
   });
 
   if (

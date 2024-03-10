@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+
+package bony.api.v1;
+
+option (sdk_name) = "Bony";
+
+service Chat {
+  rpc CreateCompletion(CreateCompletionRequest) returns (CreateCompletionResponse);
+  rpc StreamCompletion(StreamCompletionRequest) returns (stream StreamCompletionResponse);
+}
+
+message CreateCompletionRequest {
+  string text = 1;
+}
+
+message CreateCompletionResponse {
+  string text = 1;
+}
+
+message StreamCompletionRequest {
+  string text = 1;
+}
+
+message StreamCompletionResponse {
+  string text = 1;
+}
+
+extend google.protobuf.FileOptions {
+  string sdk_name = 1000;
+}

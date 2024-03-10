@@ -20,7 +20,8 @@
     "format": "prettier --write {src,tests}/**/*.ts integration/*.ts",
     "format:check": "prettier --list-different {src,tests}/**/*.ts",
     "setup:docker": "docker compose build",
-    "watch": "tsx integration/watch.ts"
+    "watch": "tsx integration/watch.ts",
+    "build-proto": "protoc --plugin=./protoc-gen-ts_proto --ts_proto_out=./output -I=./output ./output/bony.proto"
   },
   "files": [
     "build"

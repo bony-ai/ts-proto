@@ -246,7 +246,7 @@ export function generateServiceClientImpl(
   ctx: Context,
   fileDesc: FileDescriptorProto,
   serviceDesc: ServiceDescriptorProto,
-): Code {
+): {code: Code, className: string} {
   const { options } = ctx;
   const chunks: Code[] = [];
 
@@ -254,21 +254,17 @@ export function generateServiceClientImpl(
   const { name } = serviceDesc;
   const serviceName = maybePrefixPackage(fileDesc, serviceDesc.name);
 
-  // Define the service name constant.
-  const serviceNameConst = `${name}ServiceName`;
-  chunks.push(code`export const ${serviceNameConst} = "${serviceName}";`);
-
   // Define the FooServiceImpl class
   const i = options.context ? `${name}<Context>` : name;
   const t = options.context ? `<${contextTypeVar}>` : "";
-  chunks.push(code`export class ${name}ClientImpl${t} implements ${def(i)} {`);
+  const className = `${name}ClientImpl${t}`;
+  chunks.push(code`export class ${className} implements ${def(i)} {`);
 
   // Create the constructor(rpc: Rpc)
   const rpcType = options.context ? "Rpc<Context>" : "Rpc";
   chunks.push(code`private readonly rpc: ${rpcType};`);
-  chunks.push(code`private readonly service: string;`);
-  chunks.push(code`constructor(rpc: ${rpcType}, opts?: {service?: string}) {`);
-  chunks.push(code`this.service = opts?.service || ${serviceNameConst};`);
+  chunks.push(code`private readonly service = "${serviceName}";`);
+  chunks.push(code`constructor(rpc: ${rpcType}) {`);
   chunks.push(code`this.rpc = rpc;`);
 
   // Bind each FooService method to the FooServiceImpl class
@@ -296,7 +292,7 @@ export function generateServiceClientImpl(
   }
 
   chunks.push(code`}`);
-  return code`${chunks}`;
+  return {code: code`${chunks}`, className };
 }
 
 /** We've found a BatchXxx method, create a synthetic GetXxx method that calls it. */

@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: "protoc.Dockerfile"
       args:
-        - "ARCH=${ARCH:-x86_64}"
+        - "ARCH=aarch_64"
     platform: linux/amd64
     volumes:
       - ".:/ts-proto"
