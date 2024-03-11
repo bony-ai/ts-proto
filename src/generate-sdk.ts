@@ -14,12 +14,10 @@ export function generateSdk(
   const sdkName = fileOptions['sdk_name'];
 
   if (!sdkName) {
-    chunks.push(code`//${sdkName}`);
-    return code`${chunks}`;
     throw new Error('File option `sdk_name` is required');
   }
 
-  chunks.push(code`export class ${sdkName}Sdk {`);
+  chunks.push(code`export class ${sdkName}Api {`);
   chunks.push(code`private readonly apiKey: string;`);
 
   for (const [serviceClientImplClassName, serviceClient] of Object.entries(serviceClientImpls)) {

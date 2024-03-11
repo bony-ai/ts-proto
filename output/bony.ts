@@ -415,7 +415,7 @@ export class EmbeddingsClientImpl implements Embeddings {
   }
 }
 
-export class BonySdk {
+export class BonyApi {
   private readonly apiKey: string;
   readonly chat: ChatClientImpl;
   readonly embeddings: EmbeddingsClientImpl;

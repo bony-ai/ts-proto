@@ -343,7 +343,7 @@ export function generateFile(ctx: Context, fileDesc: FileDescriptorProto): [stri
 
   });
 
-  if (Object.keys(serviceClientImpls)) {
+  if (Object.keys(serviceClientImpls).length) {
     chunks.push(generateSdk(ctx, fileDesc, serviceClientImpls));
   }
 
