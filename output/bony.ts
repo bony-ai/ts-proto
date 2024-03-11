@@ -21,6 +21,14 @@ export interface StreamCompletionResponse {
   text: string;
 }
 
+export interface CreateEmbeddingsRequest {
+  text: string;
+}
+
+export interface CreateEmbeddingsResponse {
+  text: string;
+}
+
 function createBaseCreateCompletionRequest(): CreateCompletionRequest {
   return { text: "" };
 }
@@ -249,6 +257,120 @@ export const StreamCompletionResponse = {
   },
 };
 
+function createBaseCreateEmbeddingsRequest(): CreateEmbeddingsRequest {
+  return { text: "" };
+}
+
+export const CreateEmbeddingsRequest = {
+  encode(message: CreateEmbeddingsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.text !== "") {
+      writer.uint32(10).string(message.text);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CreateEmbeddingsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateEmbeddingsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.text = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateEmbeddingsRequest {
+    return { text: isSet(object.text) ? globalThis.String(object.text) : "" };
+  },
+
+  toJSON(message: CreateEmbeddingsRequest): unknown {
+    const obj: any = {};
+    if (message.text !== "") {
+      obj.text = message.text;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CreateEmbeddingsRequest>, I>>(base?: I): CreateEmbeddingsRequest {
+    return CreateEmbeddingsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CreateEmbeddingsRequest>, I>>(object: I): CreateEmbeddingsRequest {
+    const message = createBaseCreateEmbeddingsRequest();
+    message.text = object.text ?? "";
+    return message;
+  },
+};
+
+function createBaseCreateEmbeddingsResponse(): CreateEmbeddingsResponse {
+  return { text: "" };
+}
+
+export const CreateEmbeddingsResponse = {
+  encode(message: CreateEmbeddingsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.text !== "") {
+      writer.uint32(10).string(message.text);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CreateEmbeddingsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateEmbeddingsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.text = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateEmbeddingsResponse {
+    return { text: isSet(object.text) ? globalThis.String(object.text) : "" };
+  },
+
+  toJSON(message: CreateEmbeddingsResponse): unknown {
+    const obj: any = {};
+    if (message.text !== "") {
+      obj.text = message.text;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CreateEmbeddingsResponse>, I>>(base?: I): CreateEmbeddingsResponse {
+    return CreateEmbeddingsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CreateEmbeddingsResponse>, I>>(object: I): CreateEmbeddingsResponse {
+    const message = createBaseCreateEmbeddingsResponse();
+    message.text = object.text ?? "";
+    return message;
+  },
+};
+
 export interface Chat {
   CreateCompletion(request: CreateCompletionRequest): Promise<CreateCompletionResponse>;
   StreamCompletion(request: StreamCompletionRequest): Observable<StreamCompletionResponse>;
@@ -275,12 +397,32 @@ export class ChatClientImpl implements Chat {
   }
 }
 
+export interface Embeddings {
+  CreateEmbeddings(request: CreateEmbeddingsRequest): Promise<CreateEmbeddingsResponse>;
+}
+
+export class EmbeddingsClientImpl implements Embeddings {
+  private readonly rpc: Rpc;
+  private readonly service = "bony.api.v1.Embeddings";
+  constructor(rpc: Rpc) {
+    this.rpc = rpc;
+    this.CreateEmbeddings = this.CreateEmbeddings.bind(this);
+  }
+  CreateEmbeddings(request: CreateEmbeddingsRequest): Promise<CreateEmbeddingsResponse> {
+    const data = CreateEmbeddingsRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "CreateEmbeddings", data);
+    return promise.then((data) => CreateEmbeddingsResponse.decode(_m0.Reader.create(data)));
+  }
+}
+
 export class BonySdk {
   private readonly apiKey: string;
   readonly chat: ChatClientImpl;
+  readonly embeddings: EmbeddingsClientImpl;
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     this.chat = new ChatClientImpl({ apiKey } as any);
+    this.embeddings = new EmbeddingsClientImpl({ apiKey } as any);
   }
 }
 

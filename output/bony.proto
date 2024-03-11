@@ -27,6 +27,18 @@ message StreamCompletionResponse {
   string text = 1;
 }
 
+service Embeddings {
+  rpc CreateEmbeddings(CreateEmbeddingsRequest) returns (CreateEmbeddingsResponse);
+}
+
+message CreateEmbeddingsRequest {
+  string text = 1;
+}
+
+message CreateEmbeddingsResponse {
+  string text = 1;
+}
+
 extend google.protobuf.FileOptions {
   string sdk_name = 1000;
 }

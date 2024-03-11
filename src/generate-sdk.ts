@@ -14,6 +14,8 @@ export function generateSdk(
   const sdkName = fileOptions['sdk_name'];
 
   if (!sdkName) {
+    chunks.push(code`//${sdkName}`);
+    return code`${chunks}`;
     throw new Error('File option `sdk_name` is required');
   }
 
@@ -30,9 +32,6 @@ export function generateSdk(
     chunks.push(code`this.${camelCaseGrpc(serviceClient.name)} = new ${serviceClientImplClassName}({apiKey} as any);`);
   }
   chunks.push(code`}`);
-
-
-
 
   chunks.push(code`}`);
 

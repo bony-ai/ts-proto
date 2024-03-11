@@ -309,6 +309,8 @@ export function generateFile(ctx: Context, fileDesc: FileDescriptorProto): [stri
   let hasServerStreamingMethods = false;
   let hasStreamingMethods = false;
 
+  const serviceClientImpls: Record<string, ServiceDescriptorProto> = {};
+
   visitServices(fileDesc, sourceInfo, (serviceDesc, sInfo) => {
     if (options.nestJs) {
       // NestJS is sufficiently different that we special case the client/server interfaces
@@ -325,7 +327,6 @@ export function generateFile(ctx: Context, fileDesc: FileDescriptorProto): [stri
       chunks.push(code`export const ${serviceConstName} = "${serviceDesc.name}";`);
     }
 
-    const serviceClientImpls: Record<string, ServiceDescriptorProto> = {};
     const uniqueServices = [...new Set(options.outputServices)].sort();
     uniqueServices.forEach((outputService) => {
         chunks.push(generateService(ctx, fileDesc, sInfo, serviceDesc));
@@ -340,8 +341,11 @@ export function generateFile(ctx: Context, fileDesc: FileDescriptorProto): [stri
       }
     });
 
-    chunks.push(generateSdk(ctx, fileDesc, serviceClientImpls));
   });
+
+  if (Object.keys(serviceClientImpls)) {
+    chunks.push(generateSdk(ctx, fileDesc, serviceClientImpls));
+  }
 
   if (
     options.outputServices.includes(ServiceOption.DEFAULT) &&
